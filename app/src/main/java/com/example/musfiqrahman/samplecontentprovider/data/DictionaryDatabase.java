@@ -33,7 +33,7 @@ public abstract class DictionaryDatabase extends RoomDatabase{
     public static synchronized DictionaryDatabase getInstance(Context context) {
         if (sInstance == null) {
             sInstance = Room
-                    .databaseBuilder(context.getApplicationContext(), DictionaryDatabase.class, "ex")
+                    .databaseBuilder(context.getApplicationContext(), DictionaryDatabase.class, "ex").allowMainThreadQueries()
                     .build();
             sInstance.populateInitialData();
         }

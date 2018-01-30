@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
         mDictionaryAdapter = new DictionaryAdapter();
         list.setAdapter(mDictionaryAdapter);
 
+
+
         getSupportLoaderManager().initLoader(LOADER_DICTIONARY, null, mLoaderCallbacks);
 
         //getSupportLoaderManager().initLoader(LOADER_DICTIONARY, null, mLoaderCallbacks);
@@ -47,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
                     switch (id) {
                         case LOADER_DICTIONARY:
                             return new CursorLoader(getApplicationContext(),
-                                    SampleDictionaryProvider.CONTENT_URI,
+                                    DictionaryContract.DictionaryEntity.CONTENT_URI,
                                     new String[]{DictionaryContract.DictionaryEntity.COLUMN_WORD, DictionaryContract.DictionaryEntity.COLUMN_MEANING},
                                     null, null, null);
                         default:

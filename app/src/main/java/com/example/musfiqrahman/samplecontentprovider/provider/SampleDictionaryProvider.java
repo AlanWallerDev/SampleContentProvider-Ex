@@ -33,15 +33,9 @@ import java.util.ArrayList;
 
 public class SampleDictionaryProvider extends ContentProvider {
 
-
-    /** The authority of this content provider. */
-    public static final String AUTHORITY = "com.example.musfiqrahman.samplecontentprovider.provider";
+    private DictionaryDao dictionaryDao;
 
 
-
-    /** The URI for the Dictionary table. */
-    public static final Uri CONTENT_URI = Uri.parse(
-            "content://" + AUTHORITY + "/" + DictionaryContract.DictionaryEntity.TABLE_NAME);
 
 
     /** The match code for some items in the Dictionary table. */
@@ -53,43 +47,106 @@ public class SampleDictionaryProvider extends ContentProvider {
     /** The URI matcher. */
     private static final UriMatcher MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 
-    static {
-        MATCHER.addURI(AUTHORITY, DictionaryContract.DictionaryEntity.TABLE_NAME, CODE_DICTIONARY_DIR);
-        MATCHER.addURI(AUTHORITY, DictionaryContract.DictionaryEntity.TABLE_NAME + "/*", CODE_DICTIONARY_ITEM);
+    private static UriMatcher getMatcher() {
+        UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+        matcher.addURI(DictionaryContract.AUTHORITY, DictionaryContract.DictionaryEntity.TABLE_NAME, CODE_DICTIONARY_DIR);
+        matcher.addURI(DictionaryContract.AUTHORITY, DictionaryContract.DictionaryEntity.TABLE_NAME + "/*", CODE_DICTIONARY_ITEM);
+        return matcher;
     }
 
     @Override
     public boolean onCreate() {
-        
-        return false;
+        Context context = getContext();
+        if(context == null)
+            return false;
+        dictionaryDao = DictionaryDatabase.getInstance(context).dictionaryDao();
+        return true;
     }
 
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] strings, @Nullable String s, @Nullable String[] strings1, @Nullable String s1) {
-        return null;
+
+        Cursor cursor = null;
+
+        switch (MATCHER.match(uri)){
+            case CODE_DICTIONARY_DIR:
+                //return all data
+                cursor = dictionaryDao.selectAll();
+                break;
+            case CODE_DICTIONARY_ITEM:
+                //return specific data
+                cursor = dictionaryDao.selectById(ContentUris.parseId(uri));
+                break;
+                default:
+                    //throw exception
+                    throw new IllegalArgumentException("Unknown URI");
+        }
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
     }
 
     @Nullable
     @Override
     public String getType(@NonNull Uri uri) {
-        return null;
+        switch (MATCHER.match(uri)){
+            case CODE_DICTIONARY_DIR:
+                return new String("vnd.android.cursor.dir/" + DictionaryContract.AUTHORITY + DictionaryContract.DictionaryEntity.TABLE_NAME);
+
+            case CODE_DICTIONARY_ITEM:
+                return new String("vnd.android.cursor.item/");
+            default:
+                throw new IllegalArgumentException("Unknown Uri");
+
+        }
+
     }
 
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues contentValues) {
-        return null;
+
+        switch (MATCHER.match(uri)){
+            case CODE_DICTIONARY_DIR:
+                final long id = dictionaryDao.insert(DictionaryEntry.fromContentValues(contentValues));
+            return ContentUris.withAppendedId(uri, id);
+            case CODE_DICTIONARY_ITEM:
+                throw new IllegalArgumentException("Invalid Uri: Cannot Insert with ID");
+            default:
+                throw new IllegalArgumentException("Unknown Uri");
+
+        }
+
     }
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String s, @Nullable String[] strings) {
+
+        switch (MATCHER.match(uri)){
+            case CODE_DICTIONARY_DIR:
+                throw new IllegalArgumentException("Need Id");
+            case CODE_DICTIONARY_ITEM:
+                final int count = dictionaryDao.deleteById(ContentUris.parseId(uri));
+                return count;
+        }
         return 0;
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s, @Nullable String[] strings) {
-        return 0;
+        switch (MATCHER.match(uri)){
+            case CODE_DICTIONARY_DIR:
+                throw new IllegalArgumentException("Cannot Update Without ID");
+            case CODE_DICTIONARY_ITEM:
+                final int id = dictionaryDao.update(DictionaryEntry.fromContentValues(contentValues));
+                return id;
+            default:
+                throw new IllegalArgumentException("Unknown Uri");
+
+        }
+
     }
 
 
